@@ -1,0 +1,66 @@
+🔌 Circuit Connections
+🧠 Arduino Nano Connections
+
+Component	Pin Connection
+IR Sensor OUT	D2
+BC547 Base	D3 through 1kΩ resistor
+LED Anode	D4 through 220Ω resistor
+OLED RES	D8
+OLED DC	D9
+OLED CS	D10
+OLED MOSI (D1)	D11
+OLED CLK (D0)	D13
+OLED VCC	5V
+OLED GND	GND
+
+⚡ IR Speed Sensor (FC-03)
+IR Sensor Pin	Arduino Nano
+VCC	5V
+GND	GND
+OUT	D2
+🔥 BC547 Motor Driver
+
+BC547 Pin	Connection
+Base	D3 through 1kΩ resistor
+Collector	Motor Negative (-)
+Emitter	GND
+🔄 DC Motor Connections
+Motor Terminal	Connection
+Positive (+)	9V Battery Positive
+Negative (-)	BC547 Collector
+🔁 1N4007 Flyback Diode
+Diode Side	Connection
+Cathode (Stripe Side)	Motor Positive (+)
+Anode	Motor Negative (-)
+🔴 LED Connection
+LED Pin	Connection
+Anode (+)	D4 through 220Ω resistor
+Cathode (-)	GND
+⚠️ Common Ground (IMPORTANT)
+
+Connect ALL together:
+
+Arduino GND
+IR Sensor GND
+OLED GND
+Battery Negative (-)
+BC547 Emitter
+📟 OLED SPI Connections
+OLED Pin	Arduino Nano
+GND	GND
+VCC	5V
+D0 (CLK)	D13
+D1 (MOSI)	D11
+RES	D8
+DC	D9
+CS	D10
+🧾 Simple Circuit Flow
+IR Sensor → Arduino Nano → RPM Calculation
+                          ↓
+                    OLED Display
+                          ↓
+                    Misfire Detection
+                          ↓
+                   LED Warning Output
+
+Arduino D3 → BC547 → DC Motor
