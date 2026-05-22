@@ -1,0 +1,167 @@
+#include <SPI.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define OLED_MOSI 11
+#define OLED_CLK 13
+#define OLED_DC 9
+#define OLED_CS 10
+#define OLED_RESET 8
+
+Adafruit_SSD1306 display(
+128,
+64,
+&SPI,
+OLED_DC,
+OLED_RESET,
+OLED_CS
+);
+
+const int sensorPin = 2;
+const int motorPin = 3;
+const int ledPin = 4;
+
+volatile unsigned long lastPulseTime = 0;
+volatile unsigned long pulseInterval = 0;
+
+float rpm = 0;
+float smoothRPM = 0;
+
+const int slots = 1;
+
+unsigned long previousMisfire = 0;
+bool misfire = false;
+
+void setup() {
+
+  pinMode(sensorPin, INPUT_PULLUP);
+
+  pinMode(motorPin, OUTPUT);
+  pinMode(ledPin, OUTPUT);
+
+  analogWrite(motorPin, 180);
+
+  attachInterrupt(
+    digitalPinToInterrupt(sensorPin),
+    pulseDetected,
+    FALLING
+  );
+
+  Serial.begin(115200);
+
+  display.begin(SSD1306_SWITCHCAPVCC);
+
+  display.clearDisplay();
+  display.setTextColor(WHITE);
+
+  startupScreen();
+}
+
+void loop() {
+
+  if (millis() - previousMisfire > 10000) {
+    misfire = true;
+    previousMisfire = millis();
+  }
+
+  if (misfire && millis() - previousMisfire > 1200) {
+    misfire = false;
+  }
+
+  if (pulseInterval > 0) {
+
+    unsigned long tempInterval = pulseInterval;
+
+    if (misfire) {
+      tempInterval = pulseInterval * 3;
+    }
+
+    rpm = 60000000.0 / (tempInterval * slots);
+
+    if (rpm < 100 || rpm > 5000) {
+      return;
+    }
+
+    smoothRPM = (smoothRPM * 0.85) + (rpm * 0.15);
+
+    if (misfire) {
+      digitalWrite(ledPin, HIGH);
+    }
+    else {
+      digitalWrite(ledPin, LOW);
+    }
+
+    display.clearDisplay();
+
+    display.setTextSize(1);
+
+    display.setCursor(0,0);
+    display.println("CRANKSHAFT MONITOR");
+
+    display.setCursor(0,15);
+    display.print("RPM: ");
+    display.println((int)smoothRPM);
+
+    display.setCursor(0,30);
+
+    if (misfire) {
+      display.setTextSize(2);
+      display.println("MISFIRE");
+      display.setTextSize(1);
+    }
+    else {
+      display.println("STATUS: NORMAL");
+    }
+
+    static int x = 0;
+
+    int y = map((int)smoothRPM,
+                0,
+                4000,
+                63,
+                40);
+
+    display.drawPixel(x, y, WHITE);
+
+    x++;
+
+    if (x >= 128) {
+      x = 0;
+    }
+
+    display.display();
+
+    Serial.println(smoothRPM);
+
+    delay(40);
+  }
+}
+
+void pulseDetected() {
+
+  unsigned long currentTime = micros();
+
+  if (currentTime - lastPulseTime > 4000) {
+
+    pulseInterval = currentTime - lastPulseTime;
+
+    lastPulseTime = currentTime;
+  }
+}
+
+void startupScreen() {
+
+  display.clearDisplay();
+
+  display.setTextSize(1);
+
+  display.setCursor(10,20);
+  display.println("MISFIRE DETECTION");
+
+  display.setCursor(25,35);
+  display.println("SYSTEM");
+
+  display.display();
+
+  delay(2000);
+}
